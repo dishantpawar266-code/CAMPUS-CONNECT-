@@ -123,7 +123,7 @@ def show_student_notices_page():
 
 
 # =====================================================
-# STUDENT DOUBT FORUM PAGE (UNDER MAINTENANCE)
+# STUDENT DOUBT FORUM PAGE (POST DOUBTS & VIEW REPLIES)
 # =====================================================
 def show_student_doubt_forum_page():
     st.title("💬 Student Doubt Forum")
@@ -131,9 +131,74 @@ def show_student_doubt_forum_page():
     st.markdown("---")
 
     student_name = st.session_state.get("name", st.session_state.get("username", "DISHANT H PAWAR"))
-    
-    st.warning("⚠️ **Module Under Maintenance**")
-    st.info("We are currently updating the requirements, database structure, and teacher response workflow for this section. Please check back shortly!")
+
+    # Form to post a new doubt
+    with st.expander("❓ Ask a New Doubt", expanded=True):
+        with st.form("doubt_form", clear_on_submit=True):
+            doubt_question = st.text_area("Your Question / Doubt", placeholder="Describe your doubt clearly...")
+            submit_doubt = st.form_submit_button("Submit Doubt", type="primary", use_container_width=True)
+
+            if submit_doubt:
+                if not doubt_question.strip():
+                    st.warning("⚠️ Please enter your question before submitting.")
+                else:
+                    try:
+                        conn = get_connection()
+                        if conn:
+                            cursor = conn.cursor()
+                            cursor.execute(
+                                "INSERT INTO student_doubts (student_name, question, status) VALUES (%s, %s, 'Pending')",
+                                (student_name, doubt_question.strip())
+                            )
+                            conn.commit()
+                            cursor.close()
+                            conn.close()
+                            st.success("✅ Doubt posted successfully!")
+                            st.rerun() # Refresh to show the new doubt
+                    except Exception as e:
+                        st.error(f"Error posting doubt: {e}")
+
+    st.markdown("### 📋 All Doubts & Discussions")
+    try:
+        conn = get_connection()
+        if conn:
+            cursor = conn.cursor(dictionary=True)
+            cursor.execute("SELECT * FROM student_doubts ORDER BY created_at DESC")
+            all_doubts = cursor.fetchall()
+            cursor.close()
+            conn.close()
+
+            if not all_doubts:
+                st.info("ℹ️ No doubts raised in the forum yet.")
+            else:
+                for d in all_doubts:
+                    status_emoji = "🟢" if d['status'] == 'Resolved' else "🟠"
+                    is_owner = (d['student_name'].strip().lower() == student_name.strip().lower())
+                    owner_tag = " (You)" if is_owner else f" [{d['student_name']}]"
+                    
+                    with st.expander(f"{status_emoji} Q: {d['question'][:50]}...{owner_tag}"):
+                        st.write(f"**Question:** {d['question']}")
+                        st.caption(f"Asked by: **{d['student_name']}** | Raised on: {d['created_at']} | Status: **{d['status']}**")
+
+                        if d['reply']:
+                            st.success(f"**Faculty Answer:** {d['reply']}")
+                        else:
+                            st.warning("⏳ Status: Pending (Waiting for Faculty response)")
+
+                        # ADDED: Delete Button for the student who created the doubt
+                        if is_owner:
+                            if st.button("🗑️ Delete My Doubt", key=f"del_doubt_{d['id']}"):
+                                conn_del = get_connection()
+                                if conn_del:
+                                    cur_del = conn_del.cursor()
+                                    cur_del.execute("DELETE FROM student_doubts WHERE id = %s", (d['id'],))
+                                    conn_del.commit()
+                                    cur_del.close()
+                                    conn_del.close()
+                                    st.success("Doubt deleted successfully!")
+                                    st.rerun() # Refresh page to update list
+    except Exception as e:
+        st.error(f"Error loading doubts forum: {e}")
 
 
 # =====================================================
@@ -412,5 +477,4 @@ def show_student_dashboard():
                 status_icon = "✅" if t.get("is_completed") else "⏳"
                 st.write(
                     f"{status_icon} **[{t.get('time_slot')}]** {t.get('title')}"
-                ) 
-               
+                )

@@ -84,7 +84,7 @@ class PlanYourDayView(ctk.CTkFrame):
         add_btn.pack(side="left", padx=(10, 15), pady=15)
 
         # Scrollable Task List
-        self.list_container = ctk.CTkScrollableFrame(self, fg_color="transparent")
+        self.list_container = ctk.CTkScrollableFrame(self, fg_color="transparent") 
         self.list_container.pack(fill="both", expand=True, padx=20, pady=10)
 
         self.render_tasks()
