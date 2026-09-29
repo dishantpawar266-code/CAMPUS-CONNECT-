@@ -6,17 +6,11 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Detect Streamlit Cloud
-IS_CLOUD = "STREAMLIT_RUNTIME" in os.environ
-
 
 def get_connection():
     try:
-
-        # ==============================
-        # STREAMLIT CLOUD / TiDB CLOUD
-        # ==============================
-        if IS_CLOUD:
+        # Streamlit Cloud / TiDB Cloud
+        if hasattr(st, "secrets") and "DB_HOST" in st.secrets:
 
             conn = mysql.connector.connect(
                 host=st.secrets["DB_HOST"],
@@ -29,9 +23,7 @@ def get_connection():
                 ssl_verify_identity=True
             )
 
-        # ==============================
-        # LOCAL COMPUTER
-        # ==============================
+        # Local computer
         else:
 
             conn = mysql.connector.connect(
