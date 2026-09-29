@@ -8,6 +8,20 @@ load_dotenv()
 
 
 def get_connection():
+def get_connection():
+
+    st.write("🔥 NEW DATABASE.PY RUNNING")
+
+    if "DB_HOST" in st.secrets:
+        st.write("🔥 DB_HOST SECRET FOUND")
+        st.write("🔥 HOST:", st.secrets["DB_HOST"])
+
+    else:
+        st.write("❌ DB_HOST SECRET NOT FOUND")
+
+    try:
+        ...
+
     try:
         # Streamlit Cloud / TiDB Cloud
         if hasattr(st, "secrets") and "DB_HOST" in st.secrets:
